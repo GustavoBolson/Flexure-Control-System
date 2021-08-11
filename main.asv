@@ -1,0 +1,99 @@
+%% Initialization and Computation Parameters
+
+% Clearing the workspace
+clear;
+clc;
+close all hidden;
+
+%%% Domain (integers with sum up to 10)
+scope = 4;
+oversampling = 4;
+
+% Defining the interval of the domain (treated as square)
+x = -(2^(oversampling)-1/(2^scope)):(1/(2^scope)):(2^(oversampling));
+
+%% Main Parameters
+
+%%% Wavefront definition
+
+% Phase: OSA/ANSI Zernike Polynomials (line1: index, line2: coefficient)
+wf_phs = [0     1     2     3     4     5;
+          1     0     0     0     0     0];
+
+% Amplitude: polar coordinates (with apodization)
+fwhm = 0.3; %Full width at half maximum
+wf_amp = @(r, theta) exp(-0.5*(r/(fwhm/(sqrt(2*log(2))))).^2); %gassian beam
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Difraction Grating and Spectral Response Definition
+
+% Dispersion factor
+
+% Spectrum of the source
+
+% Sectral Response of System
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Scaling Factors
+
+% Plate scale
+
+% Intensity of source
+
+
+%% Generating Wavefront from Polynomials and Apodization
+
+wf = wavefront(wf_phs, wf_amp, x, true);
+
+
+%% Taking the Fourier Transform of the Wavefront
+
+figure(2);
+F = fft2(wf);
+F3 = fftshift(F);
+PSF = F3.*conj(F3);
+
+% imshow(normalize((F3.*conj(F3)),'range'), 'InitialMagnification', 'fit');
+surf(PSF); shading interp;
+colorbar;
+view(2);
+axis square;
+
+%% Convoluting the Transform with the Spectrum of the Source times Spectral Response of the System
+
+%% Generating Sensor Simulation
+
+%number of pixels in one direction
+pixn = 2^(scope);
+pix = (2*2^oversampling*2^scope)/(pixn);
+
+% samp = ones(pix);
+% Y = conv2(PSF,samp,'valid');
+% CCD = Y(1:pix:end,1:pix:end)/4;
+
+step = length(PSF)/pixn;
+for ii = 1:pixn
+    for jj = 1:pixn
+        CCD(ii,jj) = sum(sum(PSF((1 + (ii-1)*step):((ii)*step),(1 + (jj-1)*step):((jj)*step))));
+        jj = jj + 1;
+    end
+    ii = ii + 1;
+end
+
+wsx = 0; wsy = 0;
+for ii = 1:length(CCD(1,:))
+    wsx = ii*sum(CCD(ii,:)) + wsx;
+    wsy = ii*sum(CCD(:,ii)) + wsy;
+end
+centx = wsx/sum(sum(CCD));
+centy = wsy/sum(sum(CCD));
+
+figure(3)
+imshow(flip(CCD./max(max(CCD))),'InitialMagnification','fit');
+colorbar;
+axis square;
+hold on;
+plot(centy,pixn-centx+1,'o')
