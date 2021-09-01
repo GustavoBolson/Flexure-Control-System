@@ -21,7 +21,7 @@ verbose = false;
 
 % Phase: OSA/ANSI Zernike Polynomials (line1: index, line2: coefficient)
 wf_phs = [0     1     2     3     4     7;
-          1     0     0     0     0     3];
+          1     3     0     0     2     2];
 
 % Amplitude: polar coordinates (with apodization)
 fwhm = 0.4; %Full width at half maximum
@@ -56,22 +56,24 @@ src_int = 1; %Watts per mm^2
 wf = wavefront(wf_phs, wf_amp, x, verbose);
 wf = wf/sum(sum(abs(wf)));
 
-
 %% Taking the Fourier Transform of the Wavefront
 
 F = fft2(wf);
 F3 = fftshift(F);
 PSF = F3.*conj(F3);
 
-figure(2);
-surf(PSF); shading interp;
-colorbar;
-view(2);
-axis tight; axis square;
+if verbose
+    figure(2);
+    surf(PSF); shading interp;
+    colorbar;
+    view(2);
+    axis tight; axis square;
+end
 
 %% Convoluting the Transform with the Spectrum of the Source times Spectral Response of the System
 % H = fspecial('motion',256,0);
-H = [ones(1,64) 0.5*ones(1,64) ones(1,64)]; H = H/sum(H);
+% H = [ones(1,128) 0.5*ones(1,128) ones(1,128)]; H = H/sum(H);
+H = [1];
 Dispersed_PSF = imfilter(PSF,H,'replicate');
 
 figure(3);
@@ -82,14 +84,20 @@ axis tight; axis square;
 
 %% Generating Sensor Simulation
 
+%simulating single photon hits
+integration = photon_integration(Dispersed_PSF,1000,verbose);
+
+% imshow(flip(integration))
+% axis tight; axis square;
+
 %number of pixels in one direction
 pixn = 2^(scope);
 pix = (2*2^oversampling*2^scope)/(pixn);
 
-step = (length(Dispersed_PSF))/pixn;
+step = (length(integration))/pixn;
 for ii = 1:pixn
     for jj = 1:pixn
-        CCD(ii,jj) = sum(sum(Dispersed_PSF((2 + (ii-1)*step):((ii)*step),(2 + (jj-1)*step):((jj)*step))));
+        CCD(ii,jj) = sum(sum(integration((2 + (ii-1)*step):((ii)*step),(2 + (jj-1)*step):((jj)*step))));
         jj = jj + 1;
     end
     ii = ii + 1;
@@ -103,10 +111,10 @@ end
 centx = wsx/sum(sum(CCD));
 centy = wsy/sum(sum(CCD));
 
-figure(4)
+figure(5)
 % imshow(flip(CCD./max(max(CCD))),'InitialMagnification','fit');
 % imshow(flip(CCD/282),'InitialMagnification','fit');
-CCD = CCD/sum(sum(PSF));
+% CCD = CCD/sum(sum(PSF));
 image = bar3(flip(CCD), 1); view(2);
 for k = 1:length(image)
     zdata = image(k).ZData;
