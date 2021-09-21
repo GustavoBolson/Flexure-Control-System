@@ -1,6 +1,6 @@
 clear; clc; close all hidden;
 
-A = readmatrix('Baricenter_TEST1.csv');
+A = readmatrix('Baricenter_TEST2.csv');
 
 figure;
 scatter(A(:,1), A(:,2), '.');
