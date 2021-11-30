@@ -1,14 +1,14 @@
 clear; clc; %close all hidden;
 
-A1 = readmatrix('Barycenter_sat10_noise10.txt');
-A2 = readmatrix('Barycenter_sat10_noise1.txt');
-A3 = readmatrix('Barycenter_sat10_noise0.txt');
+A1 = readmatrix('Barycenter_sat1_noise10.txt');
+A2 = readmatrix('Barycenter_sat1_noise1.txt');
+A3 = readmatrix('Barycenter_sat1_noise0.txt');
 
 figure;
 scatter(A1(:,1), A1(:,2), '.'); hold on;
 scatter(A2(:,1), A2(:,2), '.'); hold on;
 scatter(A3(:,1), A3(:,2), '.'); hold off;
-axis square; %axis([28, 31, 28, 31]);
+axis tight; axes([28, 31, 28, 31]);
 
 A = A3;
 
